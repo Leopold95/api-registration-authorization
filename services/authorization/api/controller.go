@@ -5,7 +5,7 @@ import (
 	"api-registration-authorization/shared"
 	"api-registration-authorization/shared/consts"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 type AuthController struct {
@@ -22,7 +22,7 @@ func NewAuthController(app *fiber.App, s *application.AuthorizationService) *Aut
 	return controller
 }
 
-func (this *AuthController) auth(ctx *fiber.Ctx) error {
+func (this *AuthController) auth(ctx fiber.Ctx) error {
 	request := ctx.Locals(consts.RequestKey).(AuthorizationRequest)
 	data, err := this.service.TryAuthenticateUser(request.Email, request.Password)
 	if err != nil {

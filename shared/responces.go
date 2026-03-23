@@ -1,6 +1,6 @@
 package shared
 
-import "github.com/gofiber/fiber/v2"
+import "github.com/gofiber/fiber/v3"
 
 type GlobalResponse struct {
 	Success bool    `json:"success"`
@@ -8,7 +8,7 @@ type GlobalResponse struct {
 	Data    any     `json:"data"`
 }
 
-func ResponseOk(ctx *fiber.Ctx, data any) error {
+func ResponseOk(ctx fiber.Ctx, data any) error {
 	return ctx.Status(fiber.StatusOK).JSON(
 		&GlobalResponse{
 			Success: true,
@@ -17,7 +17,7 @@ func ResponseOk(ctx *fiber.Ctx, data any) error {
 		})
 }
 
-func ResponseBadRequest(ctx *fiber.Ctx, message string) error {
+func ResponseBadRequest(ctx fiber.Ctx, message string) error {
 	return ctx.Status(fiber.StatusBadRequest).JSON(GlobalResponse{
 		Success: false,
 		Message: &message,

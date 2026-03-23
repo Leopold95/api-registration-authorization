@@ -6,7 +6,7 @@ import (
 	"api-registration-authorization/shared/responces"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 type AuthorizationRequest struct {
@@ -14,10 +14,10 @@ type AuthorizationRequest struct {
 	Email    string `json:"email" validate:"required"`
 }
 
-func RequestAuthorization(c *fiber.Ctx) error {
+func RequestAuthorization(c fiber.Ctx) error {
 	var update AuthorizationRequest
 
-	if err := c.BodyParser(&update); err != nil {
+	if err := c.Bind().Body(&update); err != nil {
 		return responces.JsonParseError(c)
 	}
 

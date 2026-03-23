@@ -5,7 +5,7 @@ import (
 	"api-registration-authorization/shared"
 	"log"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 func main() {
@@ -16,7 +16,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	app.Post("api/auth/migrate", func(c *fiber.Ctx) error {
+	app.Post("api/auth/migrate", func(c fiber.Ctx) error {
 		log.Println("migrating data")
 		dataaccess.Migrate(db)
 		log.Println("data migrated")

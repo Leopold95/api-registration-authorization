@@ -6,7 +6,7 @@ import (
 	"api-registration-authorization/shared/responces"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 type RegistrationRequest struct {
@@ -15,14 +15,14 @@ type RegistrationRequest struct {
 	Email    string `json:"email" validate:"required"`
 }
 
-func RequestRegistration(c *fiber.Ctx) error {
-	var update RegistrationRequest
+func RequestRegistration(c fiber.Ctx) error {
+	var register RegistrationRequest
 
-	if err := c.BodyParser(&update); err != nil {
+	if err := c.Bind().Body(&register); err != nil {
 		return responces.JsonParseError(c)
 	}
 
-	if err := shared.Validate.Struct(update); err != nil {
+	if err := shared.Validate.Struct(register); err != nil {
 		errors := make(map[string]string)
 		for _, err := range err.(validator.ValidationErrors) {
 			errors[err.Field()] = err.Tag()
@@ -32,7 +32,7 @@ func RequestRegistration(c *fiber.Ctx) error {
 		})
 	}
 
-	c.Locals(consts.RequestKey, update)
+	c.Locals(consts.RequestKey, register)
 
 	return c.Next()
 }

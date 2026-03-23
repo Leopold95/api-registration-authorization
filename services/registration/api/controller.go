@@ -7,7 +7,7 @@ import (
 	"api-registration-authorization/shared/consts"
 	"errors"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 type RegisterController struct {
@@ -24,7 +24,7 @@ func NewRegisterController(app *fiber.App, s *application.RegistrationService) *
 	return controller
 }
 
-func (this *RegisterController) register(ctx *fiber.Ctx) error {
+func (this *RegisterController) register(ctx fiber.Ctx) error {
 	request := ctx.Locals(consts.RequestKey).(RegistrationRequest)
 	err, result := this.service.Register(request.Email, request.Password, request.Username)
 	if err != nil {
