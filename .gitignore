@@ -2,3 +2,9 @@
 /.env
 /.env
 .develop.env
+protoc.exe
+/vendor
+/vendor/
+public-key.txt
+private-key.txt
+/vendor/
