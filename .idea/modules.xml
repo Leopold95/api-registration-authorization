@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/api-registration-authorization.iml" filepath="$PROJECT_DIR$/.idea/api-registration-authorization.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/ml-api-register-authorize.iml" filepath="$PROJECT_DIR$/.idea/ml-api-register-authorize.iml" />
     </modules>
   </component>
 </project>

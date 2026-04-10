@@ -18,7 +18,12 @@ func NewAuthorizationService(repository *dataaccess.AuthorizationRepository, tok
 }
 
 func (this *AuthorizationService) TryAuthenticateUser(email, password string) (*shared.TokenModel, error) {
-	userModel := this.repository.SelectUser(email)
+	userModel, err := this.repository.SelectUser(email)
+
+	if err != nil {
+		return nil, err
+	}
+
 	token, err := this.tokenService.CreateToken(userModel)
 	if err != nil {
 		return nil, err

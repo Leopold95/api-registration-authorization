@@ -7,6 +7,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
 	"gorm.io/gorm"
 )
@@ -26,9 +27,9 @@ func NewRegistrationRepository(db *gorm.DB) *RegistrationRepository {
 func (this *RegistrationRepository) Insert(user *shared.UserModel) error {
 	entity := &shared.UserEntity{
 		Id:               user.Id,
-		Name:             user.Name,
 		Email:            user.Email,
 		PasswordHash:     user.Password,
+		ProfileId:        user.ProfileId,
 		RegistrationDate: time.Now(),
 	}
 
@@ -39,5 +40,10 @@ func (this *RegistrationRepository) Insert(user *shared.UserModel) error {
 		return domain.ErrorUserExists
 	}
 
+	return err
+}
+
+func (self *RegistrationRepository) Delete(id uuid.UUID) error {
+	err := self.db.Where("id = ?", id).Delete(&shared.UserEntity{}).Error
 	return err
 }

@@ -18,6 +18,7 @@ func NewAuthController(app *fiber.App, s *application.AuthorizationService) *Aut
 	}
 
 	app.Post("/api/v2/auth/authorize", RequestAuthorization, controller.auth)
+	app.Get("/api/v2/auth/authorize/public", controller.auth)
 
 	return controller
 }
@@ -29,4 +30,8 @@ func (this *AuthController) auth(ctx fiber.Ctx) error {
 		return shared.ResponseBadRequest(ctx, "error")
 	}
 	return shared.ResponseOk(ctx, &AuthorizeResponse{Token: data.Token, RefreshToken: data.RefreshToken})
+}
+
+func (this *AuthController) getKey(ctx fiber.Ctx) error {
+	return shared.ResponseOk(ctx, &PublicKeyResponse{Key: ""})
 }

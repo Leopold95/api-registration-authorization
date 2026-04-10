@@ -6,6 +6,7 @@ import (
 	"api-registration-authorization/services/authorization/dataaccess"
 	"api-registration-authorization/shared"
 	"log"
+	"os"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/joho/godotenv"
@@ -14,7 +15,7 @@ import (
 func main() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		log.Printf("Error loading .env file. Using system enviroment")
 	}
 
 	app := fiber.New()
@@ -25,9 +26,13 @@ func main() {
 	}
 
 	authRepository := dataaccess.NewAuthorizationRepository(db)
-	authService := application.NewAuthorizationService(authRepository, shared.NewJwtService())
+	jwtService, err := shared.NewJwtService()
+	if err != nil {
+		log.Fatal(err)
+	}
+	authService := application.NewAuthorizationService(authRepository, jwtService)
 
 	api.NewAuthController(app, authService)
 
-	log.Fatal(app.Listen(":3000"))
+	log.Fatal(app.Listen("0.0.0.0" + os.Getenv("AUTHORIZATION_PORT")))
 }

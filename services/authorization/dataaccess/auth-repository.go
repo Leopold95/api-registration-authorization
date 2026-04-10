@@ -16,12 +16,13 @@ func NewAuthorizationRepository(db *gorm.DB) *AuthorizationRepository {
 	}
 }
 
-func (this *AuthorizationRepository) SelectUser(email string) *shared.UserModel {
+func (this *AuthorizationRepository) SelectUser(email string) (*shared.UserModel, error) {
 	entity := &shared.UserEntity{}
-	this.db.Where(&shared.UserEntity{Email: email}).First(entity)
+	err := this.db.Where(&shared.UserEntity{Email: email}).First(entity).Error
 	return &shared.UserModel{
-		Id:    entity.Id,
-		Email: entity.Email,
-		Name:  entity.Name,
-	}
+		Id:        entity.Id,
+		Email:     entity.Email,
+		Password:  entity.PasswordHash,
+		ProfileId: entity.ProfileId,
+	}, err
 }
