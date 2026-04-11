@@ -95,7 +95,7 @@ func (c *GatewayController) gate(ctx fiber.Ctx) error {
 
 func (c *GatewayController) processHeaders(user *domain.UserModel, ctx fiber.Ctx) {
 	ctx.Request().Header.Del(headerUserId)
-	ctx.Request().Header.Set(headerUserId, user.Id)
+	ctx.Request().Header.Set(headerUserId, user.ProfileId)
 
 	ctx.Request().Header.Del(headerUserEmail)
 	ctx.Request().Header.Set(headerUserEmail, user.Email)

@@ -18,7 +18,6 @@ func NewTestAuthServiceImpl(
 }
 
 func (t *TestAuthServiceImpl) ParseUserToken(token string) (*domain.UserModel, error) {
-
 	claims, err := t.tokenService.ParseToken(token)
 
 	if err != nil {
