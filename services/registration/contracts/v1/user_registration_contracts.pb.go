@@ -21,11 +21,67 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type OperationStatus int32
+
+const (
+	OperationStatus_OPERATION_STATUS_UNSPECIFIED  OperationStatus = 0
+	OperationStatus_OPERATION_STATUS_SUCCESS      OperationStatus = 1
+	OperationStatus_OPERATION_STATUS_DUPLICATE    OperationStatus = 2
+	OperationStatus_OPERATION_STATUS_SYSTEM_ERROR OperationStatus = 3
+	OperationStatus_OPERATION_STATUS_ERROR        OperationStatus = 4
+)
+
+// Enum value maps for OperationStatus.
+var (
+	OperationStatus_name = map[int32]string{
+		0: "OPERATION_STATUS_UNSPECIFIED",
+		1: "OPERATION_STATUS_SUCCESS",
+		2: "OPERATION_STATUS_DUPLICATE",
+		3: "OPERATION_STATUS_SYSTEM_ERROR",
+		4: "OPERATION_STATUS_ERROR",
+	}
+	OperationStatus_value = map[string]int32{
+		"OPERATION_STATUS_UNSPECIFIED":  0,
+		"OPERATION_STATUS_SUCCESS":      1,
+		"OPERATION_STATUS_DUPLICATE":    2,
+		"OPERATION_STATUS_SYSTEM_ERROR": 3,
+		"OPERATION_STATUS_ERROR":        4,
+	}
+)
+
+func (x OperationStatus) Enum() *OperationStatus {
+	p := new(OperationStatus)
+	*p = x
+	return p
+}
+
+func (x OperationStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (OperationStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_user_registration_contracts_proto_enumTypes[0].Descriptor()
+}
+
+func (OperationStatus) Type() protoreflect.EnumType {
+	return &file_user_registration_contracts_proto_enumTypes[0]
+}
+
+func (x OperationStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use OperationStatus.Descriptor instead.
+func (OperationStatus) EnumDescriptor() ([]byte, []int) {
+	return file_user_registration_contracts_proto_rawDescGZIP(), []int{0}
+}
+
+// The password is hashed before the workflow is started. Plain text must
+// never be written to Temporal history.
 type RgistrationRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	Email         string                 `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
-	Password      string                 `protobuf:"bytes,3,opt,name=password,proto3" json:"password,omitempty"`
+	PasswordHash  string                 `protobuf:"bytes,3,opt,name=password_hash,json=passwordHash,proto3" json:"password_hash,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -60,13 +116,6 @@ func (*RgistrationRequest) Descriptor() ([]byte, []int) {
 	return file_user_registration_contracts_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *RgistrationRequest) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
 func (x *RgistrationRequest) GetEmail() string {
 	if x != nil {
 		return x.Email
@@ -74,9 +123,9 @@ func (x *RgistrationRequest) GetEmail() string {
 	return ""
 }
 
-func (x *RgistrationRequest) GetPassword() string {
+func (x *RgistrationRequest) GetPasswordHash() string {
 	if x != nil {
-		return x.Password
+		return x.PasswordHash
 	}
 	return ""
 }
@@ -141,10 +190,11 @@ func (x *RegistrationResponse) GetErrorMessage() string {
 	return ""
 }
 
+// profile_id is generated deterministically inside the workflow.
 type CreateProfileInput struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	ProfileId     string                 `protobuf:"bytes,3,opt,name=profile_id,json=profileId,proto3" json:"profile_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -186,17 +236,19 @@ func (x *CreateProfileInput) GetEmail() string {
 	return ""
 }
 
-func (x *CreateProfileInput) GetName() string {
+func (x *CreateProfileInput) GetProfileId() string {
 	if x != nil {
-		return x.Name
+		return x.ProfileId
 	}
 	return ""
 }
 
 type CreateProfileOutput struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
-	ProfileId     *string                `protobuf:"bytes,2,opt,name=profile_id,json=profileId,proto3,oneof" json:"profile_id,omitempty"`
+	Status        OperationStatus        `protobuf:"varint,1,opt,name=status,proto3,enum=contracts.v1.user_registration.OperationStatus" json:"status,omitempty"`
+	SystemError   *int64                 `protobuf:"varint,2,opt,name=system_error,json=systemError,proto3,oneof" json:"system_error,omitempty"`
+	ProfileId     *string                `protobuf:"bytes,3,opt,name=profile_id,json=profileId,proto3,oneof" json:"profile_id,omitempty"`
+	ErrorMessage  *string                `protobuf:"bytes,4,opt,name=error_message,json=errorMessage,proto3,oneof" json:"error_message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -231,16 +283,30 @@ func (*CreateProfileOutput) Descriptor() ([]byte, []int) {
 	return file_user_registration_contracts_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *CreateProfileOutput) GetSuccess() bool {
+func (x *CreateProfileOutput) GetStatus() OperationStatus {
 	if x != nil {
-		return x.Success
+		return x.Status
 	}
-	return false
+	return OperationStatus_OPERATION_STATUS_UNSPECIFIED
+}
+
+func (x *CreateProfileOutput) GetSystemError() int64 {
+	if x != nil && x.SystemError != nil {
+		return *x.SystemError
+	}
+	return 0
 }
 
 func (x *CreateProfileOutput) GetProfileId() string {
 	if x != nil && x.ProfileId != nil {
 		return *x.ProfileId
+	}
+	return ""
+}
+
+func (x *CreateProfileOutput) GetErrorMessage() string {
+	if x != nil && x.ErrorMessage != nil {
+		return *x.ErrorMessage
 	}
 	return ""
 }
@@ -333,12 +399,13 @@ func (x *DeleteProfileOutput) GetSuccess() bool {
 	return false
 }
 
+// user_id is generated deterministically inside the workflow.
 type CreateUserInput struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	Name           string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	Email          string                 `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
 	HashedPassword string                 `protobuf:"bytes,3,opt,name=hashed_password,json=hashedPassword,proto3" json:"hashed_password,omitempty"`
 	ProfileId      string                 `protobuf:"bytes,4,opt,name=profile_id,json=profileId,proto3" json:"profile_id,omitempty"`
+	UserId         string                 `protobuf:"bytes,5,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -373,13 +440,6 @@ func (*CreateUserInput) Descriptor() ([]byte, []int) {
 	return file_user_registration_contracts_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *CreateUserInput) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
 func (x *CreateUserInput) GetEmail() string {
 	if x != nil {
 		return x.Email
@@ -401,9 +461,18 @@ func (x *CreateUserInput) GetProfileId() string {
 	return ""
 }
 
+func (x *CreateUserInput) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
 type CreateUserOutput struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Status        OperationStatus        `protobuf:"varint,1,opt,name=status,proto3,enum=contracts.v1.user_registration.OperationStatus" json:"status,omitempty"`
+	SystemError   *int64                 `protobuf:"varint,2,opt,name=system_error,json=systemError,proto3,oneof" json:"system_error,omitempty"`
+	ErrorMessage  *string                `protobuf:"bytes,3,opt,name=error_message,json=errorMessage,proto3,oneof" json:"error_message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -438,11 +507,25 @@ func (*CreateUserOutput) Descriptor() ([]byte, []int) {
 	return file_user_registration_contracts_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *CreateUserOutput) GetSuccess() bool {
+func (x *CreateUserOutput) GetStatus() OperationStatus {
 	if x != nil {
-		return x.Success
+		return x.Status
 	}
-	return false
+	return OperationStatus_OPERATION_STATUS_UNSPECIFIED
+}
+
+func (x *CreateUserOutput) GetSystemError() int64 {
+	if x != nil && x.SystemError != nil {
+		return *x.SystemError
+	}
+	return 0
+}
+
+func (x *CreateUserOutput) GetErrorMessage() string {
+	if x != nil && x.ErrorMessage != nil {
+		return *x.ErrorMessage
+	}
+	return ""
 }
 
 type DeleteUserInput struct {
@@ -537,41 +620,55 @@ var File_user_registration_contracts_proto protoreflect.FileDescriptor
 
 const file_user_registration_contracts_proto_rawDesc = "" +
 	"\n" +
-	"!user_registration_contracts.proto\x12\x1econtracts.v1.user_registration\"Z\n" +
-	"\x12RgistrationRequest\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
-	"\x05email\x18\x02 \x01(\tR\x05email\x12\x1a\n" +
-	"\bpassword\x18\x03 \x01(\tR\bpassword\"\x94\x01\n" +
+	"!user_registration_contracts.proto\x12\x1econtracts.v1.user_registration\"U\n" +
+	"\x12RgistrationRequest\x12\x14\n" +
+	"\x05email\x18\x02 \x01(\tR\x05email\x12#\n" +
+	"\rpassword_hash\x18\x03 \x01(\tR\fpasswordHashJ\x04\b\x01\x10\x02\"\x94\x01\n" +
 	"\x14RegistrationResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12&\n" +
 	"\x0fuser_profile_id\x18\x02 \x01(\tR\ruserProfileId\x12(\n" +
 	"\rerror_message\x18\x03 \x01(\tH\x00R\ferrorMessage\x88\x01\x01B\x10\n" +
-	"\x0e_error_message\">\n" +
+	"\x0e_error_message\"O\n" +
 	"\x12CreateProfileInput\x12\x14\n" +
-	"\x05email\x18\x01 \x01(\tR\x05email\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\"b\n" +
-	"\x13CreateProfileOutput\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\"\n" +
+	"\x05email\x18\x01 \x01(\tR\x05email\x12\x1d\n" +
 	"\n" +
-	"profile_id\x18\x02 \x01(\tH\x00R\tprofileId\x88\x01\x01B\r\n" +
-	"\v_profile_id\"3\n" +
+	"profile_id\x18\x03 \x01(\tR\tprofileIdJ\x04\b\x02\x10\x03\"\x86\x02\n" +
+	"\x13CreateProfileOutput\x12G\n" +
+	"\x06status\x18\x01 \x01(\x0e2/.contracts.v1.user_registration.OperationStatusR\x06status\x12&\n" +
+	"\fsystem_error\x18\x02 \x01(\x03H\x00R\vsystemError\x88\x01\x01\x12\"\n" +
+	"\n" +
+	"profile_id\x18\x03 \x01(\tH\x01R\tprofileId\x88\x01\x01\x12(\n" +
+	"\rerror_message\x18\x04 \x01(\tH\x02R\ferrorMessage\x88\x01\x01B\x0f\n" +
+	"\r_system_errorB\r\n" +
+	"\v_profile_idB\x10\n" +
+	"\x0e_error_message\"3\n" +
 	"\x12DeleteProfileInput\x12\x1d\n" +
 	"\n" +
 	"profile_id\x18\x01 \x01(\tR\tprofileId\"/\n" +
 	"\x13DeleteProfileOutput\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\"\x83\x01\n" +
-	"\x0fCreateUserInput\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"\x8e\x01\n" +
+	"\x0fCreateUserInput\x12\x14\n" +
 	"\x05email\x18\x02 \x01(\tR\x05email\x12'\n" +
 	"\x0fhashed_password\x18\x03 \x01(\tR\x0ehashedPassword\x12\x1d\n" +
 	"\n" +
-	"profile_id\x18\x04 \x01(\tR\tprofileId\",\n" +
-	"\x10CreateUserOutput\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\"*\n" +
+	"profile_id\x18\x04 \x01(\tR\tprofileId\x12\x17\n" +
+	"\auser_id\x18\x05 \x01(\tR\x06userIdJ\x04\b\x01\x10\x02\"\xd0\x01\n" +
+	"\x10CreateUserOutput\x12G\n" +
+	"\x06status\x18\x01 \x01(\x0e2/.contracts.v1.user_registration.OperationStatusR\x06status\x12&\n" +
+	"\fsystem_error\x18\x02 \x01(\x03H\x00R\vsystemError\x88\x01\x01\x12(\n" +
+	"\rerror_message\x18\x03 \x01(\tH\x01R\ferrorMessage\x88\x01\x01B\x0f\n" +
+	"\r_system_errorB\x10\n" +
+	"\x0e_error_message\"*\n" +
 	"\x0fDeleteUserInput\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\",\n" +
 	"\x10DeleteUserOutput\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccessB?Z\rcontracts/v1/\xaa\x02-UkrPlugin.Service.Users.Temporal.Contracts.V1b\x06proto3"
+	"\asuccess\x18\x01 \x01(\bR\asuccess*\xb0\x01\n" +
+	"\x0fOperationStatus\x12 \n" +
+	"\x1cOPERATION_STATUS_UNSPECIFIED\x10\x00\x12\x1c\n" +
+	"\x18OPERATION_STATUS_SUCCESS\x10\x01\x12\x1e\n" +
+	"\x1aOPERATION_STATUS_DUPLICATE\x10\x02\x12!\n" +
+	"\x1dOPERATION_STATUS_SYSTEM_ERROR\x10\x03\x12\x1a\n" +
+	"\x16OPERATION_STATUS_ERROR\x10\x04B?Z\rcontracts/v1/\xaa\x02-UkrPlugin.Service.Users.Temporal.Contracts.V1b\x06proto3"
 
 var (
 	file_user_registration_contracts_proto_rawDescOnce sync.Once
@@ -585,25 +682,29 @@ func file_user_registration_contracts_proto_rawDescGZIP() []byte {
 	return file_user_registration_contracts_proto_rawDescData
 }
 
+var file_user_registration_contracts_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_user_registration_contracts_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_user_registration_contracts_proto_goTypes = []any{
-	(*RgistrationRequest)(nil),   // 0: contracts.v1.user_registration.RgistrationRequest
-	(*RegistrationResponse)(nil), // 1: contracts.v1.user_registration.RegistrationResponse
-	(*CreateProfileInput)(nil),   // 2: contracts.v1.user_registration.CreateProfileInput
-	(*CreateProfileOutput)(nil),  // 3: contracts.v1.user_registration.CreateProfileOutput
-	(*DeleteProfileInput)(nil),   // 4: contracts.v1.user_registration.DeleteProfileInput
-	(*DeleteProfileOutput)(nil),  // 5: contracts.v1.user_registration.DeleteProfileOutput
-	(*CreateUserInput)(nil),      // 6: contracts.v1.user_registration.CreateUserInput
-	(*CreateUserOutput)(nil),     // 7: contracts.v1.user_registration.CreateUserOutput
-	(*DeleteUserInput)(nil),      // 8: contracts.v1.user_registration.DeleteUserInput
-	(*DeleteUserOutput)(nil),     // 9: contracts.v1.user_registration.DeleteUserOutput
+	(OperationStatus)(0),         // 0: contracts.v1.user_registration.OperationStatus
+	(*RgistrationRequest)(nil),   // 1: contracts.v1.user_registration.RgistrationRequest
+	(*RegistrationResponse)(nil), // 2: contracts.v1.user_registration.RegistrationResponse
+	(*CreateProfileInput)(nil),   // 3: contracts.v1.user_registration.CreateProfileInput
+	(*CreateProfileOutput)(nil),  // 4: contracts.v1.user_registration.CreateProfileOutput
+	(*DeleteProfileInput)(nil),   // 5: contracts.v1.user_registration.DeleteProfileInput
+	(*DeleteProfileOutput)(nil),  // 6: contracts.v1.user_registration.DeleteProfileOutput
+	(*CreateUserInput)(nil),      // 7: contracts.v1.user_registration.CreateUserInput
+	(*CreateUserOutput)(nil),     // 8: contracts.v1.user_registration.CreateUserOutput
+	(*DeleteUserInput)(nil),      // 9: contracts.v1.user_registration.DeleteUserInput
+	(*DeleteUserOutput)(nil),     // 10: contracts.v1.user_registration.DeleteUserOutput
 }
 var file_user_registration_contracts_proto_depIdxs = []int32{
-	0, // [0:0] is the sub-list for method output_type
-	0, // [0:0] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	0, // 0: contracts.v1.user_registration.CreateProfileOutput.status:type_name -> contracts.v1.user_registration.OperationStatus
+	0, // 1: contracts.v1.user_registration.CreateUserOutput.status:type_name -> contracts.v1.user_registration.OperationStatus
+	2, // [2:2] is the sub-list for method output_type
+	2, // [2:2] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_user_registration_contracts_proto_init() }
@@ -613,18 +714,20 @@ func file_user_registration_contracts_proto_init() {
 	}
 	file_user_registration_contracts_proto_msgTypes[1].OneofWrappers = []any{}
 	file_user_registration_contracts_proto_msgTypes[3].OneofWrappers = []any{}
+	file_user_registration_contracts_proto_msgTypes[7].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_user_registration_contracts_proto_rawDesc), len(file_user_registration_contracts_proto_rawDesc)),
-			NumEnums:      0,
+			NumEnums:      1,
 			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_user_registration_contracts_proto_goTypes,
 		DependencyIndexes: file_user_registration_contracts_proto_depIdxs,
+		EnumInfos:         file_user_registration_contracts_proto_enumTypes,
 		MessageInfos:      file_user_registration_contracts_proto_msgTypes,
 	}.Build()
 	File_user_registration_contracts_proto = out.File

@@ -1,23 +1,27 @@
 package main
 
 import (
+	"api-registration-authorization/internal/logging"
 	"api-registration-authorization/services/proxy/api"
 	"api-registration-authorization/services/proxy/application"
 	"api-registration-authorization/shared"
-	"log"
+	"github.com/rs/zerolog/log"
 	"os"
 	"time"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/cors"
-	"github.com/gofiber/fiber/v3/middleware/logger"
+
 	"github.com/gofiber/fiber/v3/middleware/recover"
 	"github.com/joho/godotenv"
 )
 
 func main() {
-	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found, using system environment variables")
+	err := godotenv.Load()
+	defer logging.Init("proxy")()
+	logging.InstallFiber(log.Logger)
+	if err != nil {
+		log.Info().Msg("No .env file found, using system environment variables")
 	}
 
 	app := fiber.New(fiber.Config{
@@ -25,14 +29,14 @@ func main() {
 		WriteTimeout: 5 * time.Second,
 	})
 
+	app.Use(logging.HTTP())
 	app.Use(recover.New())
-	app.Use(logger.New())
 
 	app.Use(cors.New())
 
 	jwtService, err := shared.NewJwtService()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err).Msg("Service initialization failed")
 	}
 
 	authService := application.NewTestAuthServiceImpl(jwtService)
@@ -43,5 +47,7 @@ func main() {
 		return c.JSON(fiber.Map{"status": "ok"})
 	})
 
-	log.Fatal(app.Listen("0.0.0.0" + os.Getenv("PROXY_PORT")))
+	if err := app.Listen("0.0.0.0"+os.Getenv("PROXY_PORT"), fiber.ListenConfig{DisableStartupMessage: true}); err != nil {
+		log.Fatal().Err(err).Msg("HTTP server failed")
+	}
 }

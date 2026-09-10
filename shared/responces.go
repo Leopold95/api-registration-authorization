@@ -3,9 +3,11 @@ package shared
 import "github.com/gofiber/fiber/v3"
 
 type GlobalResponse struct {
-	Success bool    `json:"success"`
-	Message *string `json:"message"`
-	Data    any     `json:"data"`
+	Success    bool    `json:"success"`
+	SystemCode int     `json:"system_code"`
+	HttpCode   int     `json:"http_code"`
+	Message    *string `json:"message"`
+	Data       any     `json:"data"`
 }
 
 func ResponseOk(ctx fiber.Ctx, data any) error {

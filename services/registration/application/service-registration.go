@@ -4,6 +4,8 @@ import (
 	"api-registration-authorization/services/registration/dataaccess"
 	"api-registration-authorization/services/registration/temporal"
 	"api-registration-authorization/shared"
+	"errors"
+	"strings"
 )
 
 type RegistrationService struct {
@@ -25,11 +27,22 @@ func NewRegistrationService(
 	}
 }
 
-func (self *RegistrationService) Register(email, password, username string) (error, *shared.RegistrationResponse) {
-	_, err := self.executor.BeginUserRegistration(email, username, self.hasher.HashPassword(password))
+func (self *RegistrationService) Register(email, password string) (error, *shared.RegistrationResponse) {
+	normalizedEmail := strings.ToLower(strings.TrimSpace(email))
+
+	hashedPassword, err := self.hasher.HashPassword(password)
+	if err != nil {
+		return err, nil
+	}
+
+	workflowResult, err := self.executor.BeginUserRegistration(normalizedEmail, hashedPassword)
 
 	if err != nil {
 		return err, nil
+	}
+
+	if workflowResult == nil || !workflowResult.GetSuccess() {
+		return errors.New("registration workflow returned success=false"), nil
 	}
 
 	return nil, &shared.RegistrationResponse{

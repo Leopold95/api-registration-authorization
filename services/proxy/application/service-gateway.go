@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gofiber/fiber/v3/log"
+	"github.com/rs/zerolog/log"
 )
 
 type ServiceEndpoint struct {
@@ -37,12 +37,12 @@ func InitGateway() *GatewayService {
 	requsts := strings.Split(os.Getenv(domain.ServiceRequests), separator)
 	commnents := strings.Split(os.Getenv(domain.ServiceComments), separator)
 
-	log.Debug(auth)
-	log.Debug(register)
-	log.Debug(users)
-	log.Debug(shops)
-	log.Debug(requsts)
-	log.Debug(commnents)
+	log.Debug().Strs("endpoint", auth).Msg("Gateway endpoint configured")
+	log.Debug().Strs("endpoint", register).Msg("Gateway endpoint configured")
+	log.Debug().Strs("endpoint", users).Msg("Gateway endpoint configured")
+	log.Debug().Strs("endpoint", shops).Msg("Gateway endpoint configured")
+	log.Debug().Strs("endpoint", requsts).Msg("Gateway endpoint configured")
+	log.Debug().Strs("endpoint", commnents).Msg("Gateway endpoint configured")
 
 	requireAuth, _ := strconv.ParseBool(auth[3])
 	gateway.Register(auth[0], auth[1], auth[2], requireAuth)

@@ -2,7 +2,7 @@ package domain
 
 const (
 	OrchestratorQueue = "orchestrator-task-queue"
-	WorkFlowName      = "UserRegistrationWorkflow"
+	WorkFlowName      = "UserRegistrationWorkflowV2"
 	AuthQueue         = "auth-task-queue"
 	ProfileQueue      = "profile-task-queue"
 

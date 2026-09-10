@@ -25,6 +25,20 @@ func NewRegistrationRepository(db *gorm.DB) *RegistrationRepository {
 }
 
 func (this *RegistrationRepository) Insert(user *shared.UserModel) error {
+	var existing shared.UserEntity
+	findErr := this.db.Where("id = ?", user.Id).First(&existing).Error
+	if findErr == nil {
+		if existing.Email == user.Email && existing.ProfileId == user.ProfileId {
+			return nil
+		}
+
+		return domain.ErrorRegistrationConflict
+	}
+
+	if !errors.Is(findErr, gorm.ErrRecordNotFound) {
+		return findErr
+	}
+
 	entity := &shared.UserEntity{
 		Id:               user.Id,
 		Email:            user.Email,
@@ -34,9 +48,17 @@ func (this *RegistrationRepository) Insert(user *shared.UserModel) error {
 	}
 
 	err := this.db.Create(entity).Error
+	if err == nil {
+		return nil
+	}
 
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+		findErr = this.db.Where("id = ?", user.Id).First(&existing).Error
+		if findErr == nil && existing.Email == user.Email && existing.ProfileId == user.ProfileId {
+			return nil
+		}
+
 		return domain.ErrorUserExists
 	}
 

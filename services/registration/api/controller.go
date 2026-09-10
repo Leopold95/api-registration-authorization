@@ -27,7 +27,7 @@ func NewRegisterController(app *fiber.App, s *application.RegistrationService) *
 func (this *RegisterController) register(ctx fiber.Ctx) error {
 	request := ctx.Locals(consts.RequestKey).(RegistrationRequest)
 
-	err, result := this.service.Register(request.Email, request.Password, request.Username)
+	err, result := this.service.Register(request.Email, request.Password)
 
 	if err != nil {
 		if errors.Is(err, domain.ErrorUserExists) {

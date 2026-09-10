@@ -3,11 +3,9 @@ package shared
 import (
 	"crypto/rsa"
 	"crypto/x509"
-	"encoding/base64"
 	"encoding/pem"
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -67,10 +65,6 @@ func (this *JwtService) CreateToken(model *UserModel) (string, error) {
 }
 
 func (this *JwtService) ParseToken(tokenString string) (*UserClaims, error) {
-	parts := strings.Split(tokenString, ".")
-	payload, _ := base64.RawURLEncoding.DecodeString(parts[1])
-	fmt.Println("raw payload:", string(payload))
-
 	token, err := jwt.ParseWithClaims(tokenString, &UserClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])

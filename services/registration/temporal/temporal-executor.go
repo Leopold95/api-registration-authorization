@@ -5,6 +5,7 @@ import (
 	"api-registration-authorization/services/registration/domain"
 	"context"
 
+	"github.com/rs/zerolog/log"
 	"go.temporal.io/sdk/client"
 )
 
@@ -18,13 +19,14 @@ func NewTemporalExecutor(c client.Client) *TemporalExecutor {
 	}
 }
 
-func (self *TemporalExecutor) BeginUserRegistration(email, name, hashedPassword string) (*v1.RegistrationResponse, error) {
+func (self *TemporalExecutor) BeginUserRegistration(email, hashedPassword string) (*v1.RegistrationResponse, error) {
 	var result v1.RegistrationResponse
 
+	log.Info().Str("workflow_type", domain.WorkFlowName).Msg("Begin user registration")
+
 	input := &v1.RgistrationRequest{
-		Name:     name,
-		Email:    email,
-		Password: hashedPassword,
+		Email:        email,
+		PasswordHash: hashedPassword,
 	}
 
 	run, err := self.c.ExecuteWorkflow(
@@ -38,9 +40,14 @@ func (self *TemporalExecutor) BeginUserRegistration(email, name, hashedPassword 
 	)
 
 	if err != nil {
+		log.Error().Err(err).Msg("Registration workflow execution failed")
 		return nil, err
 	}
 
 	err = run.Get(context.Background(), &result)
+	if err != nil {
+		log.Error().Err(err).Msg("Registration workflow result failed")
+	}
+
 	return &result, err
 }

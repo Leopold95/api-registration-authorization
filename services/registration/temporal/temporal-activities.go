@@ -6,18 +6,21 @@ import (
 	"api-registration-authorization/services/registration/domain"
 	"api-registration-authorization/shared"
 	"context"
-	"fmt"
-	"log"
+	"errors"
+
+	"github.com/rs/zerolog/log"
 
 	"github.com/google/uuid"
 	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/client"
+	sdktemporal "go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/worker"
+	"google.golang.org/protobuf/proto"
 )
 
 type TemporalActivities struct {
 	temporalClient client.Client
-	w              worker.Worker
+	worker         worker.Worker
 	repository     *dataaccess.RegistrationRepository
 }
 
@@ -25,17 +28,17 @@ func NewTemporalActivities(c client.Client, r *dataaccess.RegistrationRepository
 	w := worker.New(c, domain.AuthQueue, worker.Options{})
 	self := &TemporalActivities{
 		temporalClient: c,
-		w:              w,
+		worker:         w,
 		repository:     r,
 	}
 
-	self.w.RegisterActivityWithOptions(self.onCreateUser, activity.RegisterOptions{Name: domain.CreateUser})
-	self.w.RegisterActivityWithOptions(self.onDeleteUser, activity.RegisterOptions{Name: domain.DeleteUser})
+	self.worker.RegisterActivityWithOptions(self.onCreateUser, activity.RegisterOptions{Name: domain.CreateUser})
+	self.worker.RegisterActivityWithOptions(self.onDeleteUser, activity.RegisterOptions{Name: domain.DeleteUser})
 
 	go func() {
-		err := self.w.Run(worker.InterruptCh())
+		err := self.worker.Run(worker.InterruptCh())
 		if err != nil {
-			log.Fatal("cant start worker", err)
+			log.Fatal().Err(err).Msg("Temporal worker failed")
 		}
 	}()
 
@@ -43,31 +46,69 @@ func NewTemporalActivities(c client.Client, r *dataaccess.RegistrationRepository
 }
 
 func (self *TemporalActivities) onCreateUser(ctx context.Context, input *v1.CreateUserInput) (v1.CreateUserOutput, error) {
-	fmt.Println("User creating started....")
+	activity.GetLogger(ctx).Info("User creating started....")
 
-	id, _ := uuid.Parse(input.ProfileId)
-	model := &shared.UserModel{
-		Email:     input.Email,
-		Name:      input.Name,
-		Password:  input.HashedPassword,
-		ProfileId: id,
-	}
-	err := self.repository.Insert(model)
-
+	userID, err := uuid.Parse(input.GetUserId())
 	if err != nil {
-		return v1.CreateUserOutput{Success: false}, err
+		return v1.CreateUserOutput{
+			Status:       v1.OperationStatus_OPERATION_STATUS_ERROR,
+			ErrorMessage: proto.String("invalid auth user id"),
+		}, nil
 	}
 
-	fmt.Println("User creating done.")
-	return v1.CreateUserOutput{Success: true}, nil
+	profileID, err := uuid.Parse(input.GetProfileId())
+	if err != nil {
+		return v1.CreateUserOutput{
+			Status:       v1.OperationStatus_OPERATION_STATUS_ERROR,
+			ErrorMessage: proto.String("invalid profile id"),
+		}, nil
+	}
+
+	model := &shared.UserModel{
+		Id:        userID,
+		Email:     input.GetEmail(),
+		Password:  input.GetHashedPassword(),
+		ProfileId: profileID,
+	}
+	err = self.repository.Insert(model)
+
+	switch {
+	case err == nil:
+		activity.GetLogger(ctx).Info("User creating done.")
+		return v1.CreateUserOutput{
+			Status: v1.OperationStatus_OPERATION_STATUS_SUCCESS,
+		}, nil
+
+	case errors.Is(err, domain.ErrorUserExists):
+		return v1.CreateUserOutput{
+			Status: v1.OperationStatus_OPERATION_STATUS_DUPLICATE,
+		}, nil
+
+	case errors.Is(err, domain.ErrorRegistrationConflict):
+		return v1.CreateUserOutput{
+			Status:       v1.OperationStatus_OPERATION_STATUS_ERROR,
+			ErrorMessage: proto.String("registration id conflict"),
+		}, nil
+
+	default:
+		return v1.CreateUserOutput{
+			Status:      v1.OperationStatus_OPERATION_STATUS_SYSTEM_ERROR,
+			SystemError: proto.Int64(-1),
+		}, nil
+	}
 }
 
 func (self *TemporalActivities) onDeleteUser(ctx context.Context, input *v1.DeleteUserInput) (v1.DeleteUserOutput, error) {
-	fmt.Println("User deleting started....")
+	activity.GetLogger(ctx).Info("User deleting started....")
 
 	id, err := uuid.Parse(input.UserId)
 	if err != nil {
-		return v1.DeleteUserOutput{Success: false}, err
+		return v1.DeleteUserOutput{Success: false},
+			sdktemporal.NewNonRetryableApplicationError(
+				"invalid auth user id",
+				"InvalidInput",
+				err,
+			)
 	}
 
 	err = self.repository.Delete(id)
@@ -75,6 +116,6 @@ func (self *TemporalActivities) onDeleteUser(ctx context.Context, input *v1.Dele
 		return v1.DeleteUserOutput{Success: false}, err
 	}
 
-	fmt.Println("User deleting done.")
+	activity.GetLogger(ctx).Info("User deleting done.")
 	return v1.DeleteUserOutput{Success: true}, nil
 }
